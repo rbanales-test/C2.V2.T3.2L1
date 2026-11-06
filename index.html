@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Topic 3.2: Subtractive Synthesis Signal Path</title>
+  <style>
+    :root {
+      --coursera-blue: #0056D2;
+      --coursera-blue-focus: #00419E;
+      --text-dark: #1F1F1F;
+      --bg-light: #F8F9FA;
+      --card-bg: #FFFFFF;
+      --border-color: #D1D5DB;
+      --focus-outline: #FFB800;
+      --highlight-bg: #EBF3FF;
+      --ctrl-color: #6D28D9;
+      --ctrl-bg: #F5F3FF;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      display: flex;
+      justify-content: center;
+    }
+
+    .interactive-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      max-width: 760px;
+      width: 100%;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      color: var(--text-dark);
+    }
+
+    p.lead-text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    /* Diagram Canvas */
+    .diagram-canvas {
+      background-color: #F9FAFB;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px 16px;
+      margin-bottom: 20px;
+    }
+
+    /* Sound Path Row */
+    .sound-flow-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .node-btn {
+      flex: 1;
+      min-width: 110px;
+      background-color: #FFFFFF;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px 6px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--text-dark);
+      transition: all 0.2s ease;
+    }
+
+    .node-btn:focus {
+      outline: 3px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .node-btn[aria-pressed="true"] {
+      background-color: var(--highlight-bg);
+      border-color: var(--coursera-blue);
+    }
+
+    .node-title {
+      display: block;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: var(--coursera-blue);
+    }
+
+    .node-sub {
+      display: block;
+      font-size: 0.72rem;
+      color: #6B7280;
+      margin-top: 2px;
+    }
+
+    .flow-arrow {
+      font-weight: bold;
+      color: var(--coursera-blue);
+      font-size: 1rem;
+      user-select: none;
+    }
+
+    .output-box {
+      background-color: #E5E7EB;
+      border: 2px solid #9CA3AF;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--text-dark);
+      text-align: center;
+    }
+
+    /* Control Path Connector */
+    .controls-btn {
+      width: 100%;
+      background-color: var(--ctrl-bg);
+      border: 2px dashed #C4B5FD;
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      color: var(--ctrl-color);
+      transition: all 0.2s ease;
+      display: block;
+    }
+
+    .controls-btn:focus {
+      outline: 3px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .controls-btn[aria-pressed="true"] {
+      background-color: #EDE9FE;
+      border-color: var(--ctrl-color);
+    }
+
+    .ctrl-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      display: block;
+    }
+
+    .ctrl-sub {
+      font-size: 0.75rem;
+      color: #4B5563;
+      margin-top: 2px;
+      display: block;
+    }
+
+    /* Sub-menu for Filter Types (Only visible when Filter is active) */
+    .filter-selector-box {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-selector-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #4B5563;
+      margin-right: 4px;
+    }
+
+    .btn-filter-type {
+      background-color: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-dark);
+      transition: all 0.2s ease;
+    }
+
+    .btn-filter-type:focus {
+      outline: 3px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .btn-filter-type[aria-pressed="true"] {
+      background-color: var(--highlight-bg);
+      border-color: var(--coursera-blue);
+      color: var(--coursera-blue);
+    }
+
+    /* Audio Trigger */
+    .audio-action-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .btn-audio {
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #FFFFFF;
+      background-color: var(--coursera-blue);
+      border: 2px solid var(--coursera-blue-focus);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-audio:focus {
+      outline: 3px solid var(--focus-outline);
+      outline-offset: 2px;
+    }
+
+    .audio-hint {
+      font-size: 0.88rem;
+      color: #4B5563;
+    }
+
+    /* Accessible Info Panel */
+    .info-card {
+      background-color: var(--highlight-bg);
+      border-left: 4px solid var(--coursera-blue);
+      padding: 16px;
+      border-radius: 0 6px 6px 0;
+      line-height: 1.5;
+    }
+
+    .info-card h3 {
+      margin-top: 0;
+      margin-bottom: 6px;
+      font-size: 1rem;
+      color: var(--text-dark);
+    }
+
+    .info-card p {
+      margin: 0;
+      font-size: 0.92rem;
+    }
+
+    .info-card .analogy-box {
+      margin-top: 8px;
+      font-size: 0.88rem;
+      color: #374151;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      font-size: 0.85rem;
+      color: #4B5563;
+      border-top: 1px solid var(--border-color);
+      padding-top: 12px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="interactive-card" role="region" aria-labelledby="signal-path-title">
+    <h2 id="signal-path-title">Topic 3.2: Subtractive Synthesis Signal Path</h2>
+    <p class="lead-text">
+      Subtractive synthesis starts with a rich sound, then the filter removes some of the sound to shape the final tone. Select any component in the signal chain below to inspect its role and listen to its sound.
+    </p>
+
+    <!-- Signal Flow Diagram -->
+    <div class="diagram-canvas" role="group" aria-label="Signal Path Flowchart">
+      <!-- Sound Flow Line -->
+      <div class="sound-flow-row">
+        <button id="node-osc" class="node-btn" aria-pressed="false" aria-controls="status-panel">
+          <span class="node-title">Oscillator / Noise</span>
+          <span class="node-sub">Rich sound source</span>
+        </button>
+
+        <span class="flow-arrow" aria-hidden="true">──►</span>
+
+        <button id="node-mixer" class="node-btn" aria-pressed="false" aria-controls="status-panel">
+          <span class="node-title">Mixer</span>
+          <span class="node-sub">Combines sources</span>
+        </button>
+
+        <span class="flow-arrow" aria-hidden="true">──►</span>
+
+        <button id="node-filter" class="node-btn" aria-pressed="true" aria-controls="status-panel">
+          <span class="node-title">Filter</span>
+          <span class="node-sub">Removes sound</span>
+        </button>
+
+        <span class="flow-arrow" aria-hidden="true">──►</span>
+
+        <button id="node-amp" class="node-btn" aria-pressed="false" aria-controls="status-panel">
+          <span class="node-title">Amplifier</span>
+          <span class="node-sub">Shapes loudness</span>
+        </button>
+
+        <span class="flow-arrow" aria-hidden="true">──►</span>
+
+        <div class="output-box" aria-hidden="true">Output</div>
+      </div>
+
+      <!-- Control Flow Line -->
+      <button id="node-ctrl" class="controls-btn" aria-pressed="false" aria-controls="status-panel">
+        <span class="ctrl-title">▲ envelopes, LFOs, velocity, mod wheel ▲</span>
+        <span class="ctrl-sub">(these move the controls; they don't replace the sound path — click to audition a filter envelope)</span>
+      </button>
+
+      <!-- Contextual Filter Type Bar (Strictly visible ONLY when Filter node is selected) -->
+      <div class="filter-selector-box" id="filter-type-bar">
+        <span class="filter-selector-label">Filter Type:</span>
+        <button class="btn-filter-type" id="ft-lp" aria-pressed="true">Low-pass</button>
+        <button class="btn-filter-type" id="ft-hp" aria-pressed="false">High-pass</button>
+        <button class="btn-filter-type" id="ft-bp" aria-pressed="false">Band-pass</button>
+        <button class="btn-filter-type" id="ft-notch" aria-pressed="false">Notch</button>
+      </div>
+    </div>
+
+    <!-- Audition Section -->
+    <div class="audio-action-row">
+      <button id="btn-play" class="btn-audio" aria-label="Audition the selected component in the signal path">
+        ▶ Audition Sound
+      </button>
+      <span class="audio-hint" id="audio-desc">Listening to: Low-pass filter (usual choice for basses, leads, pads).</span>
+    </div>
+
+    <!-- Screen Reader Accessible Live Status -->
+    <div id="status-panel" class="info-card" role="status" aria-live="polite">
+      <h3 id="panel-title">Component: Filter (Low-pass)</h3>
+      <p id="panel-desc">
+        The filter removes some of the sound to shape the final tone. A low-pass filter is the usual choice for basses, leads, pads and classic filter sweeps. Adding resonance makes the sweep sound more vocal and animated.
+      </p>
+      <div class="analogy-box" id="panel-analogy">
+        <strong>Analogy: sculpting marble.</strong> A sculptor starts with more stone than the statue needs, then chisels the extra away. Subtractive synthesis starts with more sound than needed, then filters the extra out.
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <strong>Core concept:</strong> MIDI controls do not replace this path. They move the dials along it. An amplitude envelope shapes the loudness over time. A filter envelope changes the brightness over time.
+    </div>
+  </main>
+
+  <script>
+    const filterInfo = {
+      lp: {
+        name: "Low-pass",
+        desc: "A low-pass filter is the usual choice for basses, leads, pads and classic filter sweeps. Adding resonance makes the sweep sound more vocal and animated.",
+        audioText: "Listening to: Low-pass filter (warm, dark tone).",
+        type: 'lowpass',
+        freq: 600,
+        q: 3.5
+      },
+      hp: {
+        name: "High-pass",
+        desc: "A high-pass filter thins out a sound and removes mud. It suits thin, small-speaker effects.",
+        audioText: "Listening to: High-pass filter (thin, bright, bass removed).",
+        type: 'highpass',
+        freq: 1200,
+        q: 1.5
+      },
+      bp: {
+        name: "Band-pass",
+        desc: "A band-pass filter keeps only a middle band. It suits nasal, woodwind-like and telephone-style sounds.",
+        audioText: "Listening to: Band-pass filter (nasal, middle band only).",
+        type: 'bandpass',
+        freq: 950,
+        q: 4.0
+      },
+      notch: {
+        name: "Notch",
+        desc: "A notch filter removes a narrow band and leaves the rest. It can create hollow or phaser-like sounds. A phaser is an effect that makes a sound swoosh in a rolling way.",
+        audioText: "Listening to: Notch filter (hollow, phaser-like sound).",
+        type: 'notch',
+        freq: 900,
+        q: 6.0
+      }
+    };
+
+    let activeNode = 'filter';
+    let activeFilterType = 'lp';
+    let audioCtx = null;
+
+    const nodeOsc = document.getElementById('node-osc');
+    const nodeMixer = document.getElementById('node-mixer');
+    const nodeFilter = document.getElementById('node-filter');
+    const nodeAmp = document.getElementById('node-amp');
+    const nodeCtrl = document.getElementById('node-ctrl');
+    const filterTypeBar = document.getElementById('filter-type-bar');
+
+    const filterBtns = {
+      lp: document.getElementById('ft-lp'),
+      hp: document.getElementById('ft-hp'),
+      bp: document.getElementById('ft-bp'),
+      notch: document.getElementById('ft-notch')
+    };
+
+    const panelTitle = document.getElementById('panel-title');
+    const panelDesc = document.getElementById('panel-desc');
+    const panelAnalogy = document.getElementById('panel-analogy');
+    const audioDesc = document.getElementById('audio-desc');
+    const btnPlay = document.getElementById('btn-play');
+
+    function updateView() {
+      nodeOsc.setAttribute('aria-pressed', activeNode === 'osc');
+      nodeMixer.setAttribute('aria-pressed', activeNode === 'mixer');
+      nodeFilter.setAttribute('aria-pressed', activeNode === 'filter');
+      nodeAmp.setAttribute('aria-pressed', activeNode === 'amp');
+      nodeCtrl.setAttribute('aria-pressed', activeNode === 'ctrl');
+
+      // Observation 2 resolved: Only display the filter selector when strictly inside the Filter node
+      filterTypeBar.style.display = (activeNode === 'filter') ? 'flex' : 'none';
+
+      Object.keys(filterBtns).forEach(k => {
+        filterBtns[k].setAttribute('aria-pressed', k === activeFilterType);
+      });
+
+      const f = filterInfo[activeFilterType];
+
+      if (activeNode === 'osc') {
+        panelTitle.textContent = "Component: Oscillator or Noise";
+        panelDesc.textContent = "Subtractive synthesis starts with a rich sound, usually a saw or pulse wave, sometimes several slightly detuned oscillators, or a mix of oscillators and noise.";
+        panelAnalogy.innerHTML = "<strong>Analogy: the uncarved stone.</strong> Starting with more sound than needed before anything is filtered away.";
+        audioDesc.textContent = "Listening to: Raw unfiltered oscillator (rich sawtooth wave).";
+      } else if (activeNode === 'mixer') {
+        panelTitle.textContent = "Component: Mixer";
+        panelDesc.textContent = "Blends the rich oscillators and noise generators together into a single audio path before it enters the filter.";
+        panelAnalogy.innerHTML = "Combines sound sources so both pitched waveforms and unpitched noise can be sculpted together.";
+        audioDesc.textContent = "Listening to: Mixed sound source (sawtooth oscillator blended with noise).";
+      } else if (activeNode === 'filter') {
+        panelTitle.textContent = `Component: Filter (${f.name})`;
+        panelDesc.textContent = `The filter removes some of the sound to shape the final tone. ${f.desc}`;
+        panelAnalogy.innerHTML = "<strong>Analogy: sculpting marble.</strong> A sculptor starts with more stone than the statue needs, then chisels the extra away. Subtractive synthesis starts with more sound than needed, then filters the extra out.";
+        audioDesc.textContent = f.audioText;
+      } else if (activeNode === 'amp') {
+        panelTitle.textContent = "Component: Amplifier";
+        panelDesc.textContent = "An amplitude envelope shapes the loudness over time. The amplifier sets the volume contour (Attack, Decay, Sustain, Release) as the sound moves to the output.";
+        panelAnalogy.innerHTML = "<strong>Analogy: breath pressure.</strong> Sets how the sculpted sound speaks, sustains, and fades away.";
+        audioDesc.textContent = "Listening to: Amplifier stage (amplitude envelope shaping volume over time).";
+      } else if (activeNode === 'ctrl') {
+        // Observation 1 resolved: Clear attribution to the filter envelope audition
+        panelTitle.textContent = "Control Flow: Envelopes, LFOs, Velocity, Mod Wheel";
+        panelDesc.textContent = "Envelopes, LFOs, velocity, and the mod wheel move the filter and amplifier controls, but they are not part of the sound path. MIDI controls do not replace this path; they move the dials along it. This audio demonstration specifically audits a filter envelope dynamically sweeping the cutoff frequency on note strike.";
+        panelAnalogy.innerHTML = "Think of an invisible hand sweeping the cutoff knob back and forth dynamically on every note strike.";
+        audioDesc.textContent = "Listening to: Filter envelope modulation (dynamic cutoff sweep on note strike).";
+      }
+    }
+
+    nodeOsc.addEventListener('click', () => { activeNode = 'osc'; updateView(); });
+    nodeMixer.addEventListener('click', () => { activeNode = 'mixer'; updateView(); });
+    nodeFilter.addEventListener('click', () => { activeNode = 'filter'; updateView(); });
+    nodeAmp.addEventListener('click', () => { activeNode = 'amp'; updateView(); });
+    nodeCtrl.addEventListener('click', () => { activeNode = 'ctrl'; updateView(); });
+
+    Object.keys(filterBtns).forEach(k => {
+      filterBtns[k].addEventListener('click', () => {
+        activeFilterType = k;
+        updateView();
+      });
+    });
+
+    btnPlay.addEventListener('click', () => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const now = audioCtx.currentTime;
+      const duration = 1.3;
+
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(146.83, now); // D3
+
+      let noiseNode = null;
+      let noiseGain = null;
+      if (activeNode === 'mixer') {
+        const bufferSize = audioCtx.sampleRate * duration;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * 0.15;
+        }
+        noiseNode = audioCtx.createBufferSource();
+        noiseNode.buffer = buffer;
+        noiseGain = audioCtx.createGain();
+        noiseGain.gain.setValueAtTime(0.2, now);
+        noiseNode.connect(noiseGain);
+      }
+
+      const filter = audioCtx.createBiquadFilter();
+      const f = filterInfo[activeFilterType];
+
+      if (activeNode === 'osc' || activeNode === 'mixer') {
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(20000, now);
+      } else if (activeNode === 'ctrl') {
+        // Filter envelope modulation: fast attack, quick decay
+        filter.type = 'lowpass';
+        filter.Q.setValueAtTime(4.5, now);
+        filter.frequency.setValueAtTime(250, now);
+        filter.frequency.exponentialRampToValueAtTime(3200, now + 0.1);
+        filter.frequency.exponentialRampToValueAtTime(500, now + 0.6);
+      } else {
+        filter.type = f.type;
+        filter.frequency.setValueAtTime(f.freq, now);
+        filter.Q.setValueAtTime(f.q, now);
+      }
+
+      const amp = audioCtx.createGain();
+
+      if (activeNode === 'amp') {
+        // Demonstrating amplitude envelope contour (Attack swell, Decay, Sustain, Release)
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.linearRampToValueAtTime(0.32, now + 0.14);
+        amp.gain.exponentialRampToValueAtTime(0.12, now + 0.45);
+        amp.gain.setValueAtTime(0.12, now + 0.85);
+        amp.gain.linearRampToValueAtTime(0.0001, now + duration);
+      } else {
+        // Standard gate
+        amp.gain.setValueAtTime(0.0001, now);
+        amp.gain.linearRampToValueAtTime(0.25, now + 0.03);
+        amp.gain.setValueAtTime(0.25, now + duration - 0.08);
+        amp.gain.linearRampToValueAtTime(0.0001, now + duration);
+      }
+
+      osc.connect(filter);
+      if (noiseGain) {
+        noiseGain.connect(filter);
+      }
+      filter.connect(amp);
+      amp.connect(audioCtx.destination);
+
+      osc.start(now);
+      if (noiseNode) noiseNode.start(now);
+      osc.stop(now + duration);
+      if (noiseNode) noiseNode.stop(now + duration);
+    });
+
+    // Initialize UI
+    updateView();
+  </script>
+</body>
+</html>
